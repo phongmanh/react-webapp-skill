@@ -23,6 +23,7 @@ Usage, from the target project's root:
 import argparse
 import datetime
 import json
+import os
 import re
 import shlex
 import subprocess
@@ -30,7 +31,9 @@ import sys
 from pathlib import Path
 
 sys.path.insert(0, str(Path(__file__).resolve().parent.parent / "hooks"))
-from sdlc_status import field, handoff_field, newest_plan, next_plan_row, plan_rows  # noqa: E402
+from sdlc_status import (  # noqa: E402
+    detect_skill, field, handoff_field, newest_plan, next_plan_row, phase_number, plan_rows, workspaces,
+)
 
 SKILL = "react-webapp-sdlc"
 RESULT_LINE = re.compile(r"^AUTOPILOT-RESULT:\s*(continue|stop)\b\s*(.*)$", re.IGNORECASE)
@@ -60,6 +63,26 @@ SYSTEM_PROMPT = (
 )
 
 
+COLORS = {"blue": "34", "green": "32", "amber": "33", "red": "31", "dim": "2"}
+
+
+def paint(text, color):
+    """Colors text for a terminal; plain when piped or when NO_COLOR is set."""
+    if not sys.stdout.isatty() or os.environ.get("NO_COLOR"):
+        return text
+    return f"\033[{COLORS[color]}m{text}\033[0m"
+
+
+def refresh_dashboard(project, workspace):
+    """Rewrites the workspace's progress.html (scripts/progress.py). Best effort: returns its path or None."""
+    try:
+        from progress import build
+        return build(project, workspace.relative_to(project))
+    except Exception as error:  # SystemExit included: a dashboard problem never stops autopilot
+        print(paint(f"  (progress dashboard not updated: {error})", "dim"), flush=True)
+        return None
+
+
 class Stop(Exception):
     """Autopilot stops. failed=True means something went wrong rather than a human being needed."""
 
@@ -80,20 +103,11 @@ def find_workspace(project, workspace):
         if not (path / "STATUS.md").is_file():
             raise Stop(f"No STATUS.md in {workspace}.", failed=True)
         return path
-    found = sorted(project.glob("docs/sdlc/*/STATUS.md"))
+    found = workspaces(project)
     if len(found) != 1:
-        names = ", ".join(str(f.parent.relative_to(project)) for f in found) or "none"
+        names = ", ".join(str(path.relative_to(project)) for path in found) or "none"
         raise Stop(f"Pass --workspace: expected one docs/sdlc/*/STATUS.md, found {names}.", failed=True)
-    return found[0].parent
-
-
-def detect_skill(_text):
-    return SKILL
-
-
-def phase_number(text):
-    match = re.match(r"\s*(\d+)", field(text, "Current phase"))
-    return int(match.group(1)) if match else None
+    return found[0]
 
 
 def check_ready(text):
@@ -201,41 +215,48 @@ def autopilot(args):
     skill = args.skill or detect_skill(text)
     check_ready(text)
 
-    spent, sessions = 0.0, 0
-    while True:
-        check_can_continue(text)
-        if sessions >= args.max_sessions:
-            raise Stop(f"Reached --max-sessions {args.max_sessions}.")
-        budget_left = None if args.budget_usd is None else args.budget_usd - spent
-        if budget_left is not None and budget_left <= 0:
-            raise Stop(f"Reached --budget-usd {args.budget_usd:.2f} (spent {spent:.2f}).")
+    spent, sessions, dashboard = 0.0, 0, None
+    try:
+        while True:
+            check_can_continue(text)
+            if sessions >= args.max_sessions:
+                raise Stop(f"Reached --max-sessions {args.max_sessions}.")
+            budget_left = None if args.budget_usd is None else args.budget_usd - spent
+            if budget_left is not None and budget_left <= 0:
+                raise Stop(f"Reached --budget-usd {args.budget_usd:.2f} (spent {spent:.2f}).")
 
-        row = next_plan_row(text)
-        item = f"{row['plan']} #{row['number']}: {row['work']}" if row else "advance to the next phase"
-        command = build_command(args, session_prompt(skill, workspace_rel, row), budget_left)
-        if args.dry_run:
-            print(f"[dry run] next session: {item}\n{shlex.join(command)}")
-            raise Stop("Dry run: no session started.")
+            row = next_plan_row(text)
+            item = f"{row['plan']} #{row['number']}: {row['work']}" if row else "advance to the next phase"
+            command = build_command(args, session_prompt(skill, workspace_rel, row), budget_left)
+            if args.dry_run:
+                print(f"[dry run] next session: {item}\n{shlex.join(command)}")
+                raise Stop("Dry run: no session started.")
 
-        sessions += 1
-        print(f"Session {sessions}: {item} …", flush=True)
-        try:
-            result, cost, session_id = run_session(command, project, args.session_timeout)
-        except Stop as stop:
-            log(log_file, session=sessions, item=item, outcome="failed", reason=stop.reason)
-            raise
-        spent += cost
-        marker, reason = result_marker(result)
-        new_text = status_file.read_text(encoding="utf-8")
-        log(log_file, session=sessions, session_id=session_id, item=item, cost_usd=round(cost, 4),
-            marker=marker, reason=reason, status_changed=new_text != text)
-        print(f"  done (${cost:.2f}, session {session_id}){': ' + reason if reason else ''}", flush=True)
+            sessions += 1
+            print(paint(f"▶ Session {sessions}/{args.max_sessions} · {item}", "blue"), flush=True)
+            try:
+                result, cost, session_id = run_session(command, project, args.session_timeout)
+            except Stop as stop:
+                log(log_file, session=sessions, item=item, outcome="failed", reason=stop.reason)
+                raise
+            spent += cost
+            marker, reason = result_marker(result)
+            new_text = status_file.read_text(encoding="utf-8")
+            log(log_file, session=sessions, session_id=session_id, item=item, cost_usd=round(cost, 4),
+                marker=marker, reason=reason, status_changed=new_text != text)
+            print(paint(f"  ✔ done · ${cost:.2f} · session {session_id}{': ' + reason if reason else ''}", "green"),
+                  flush=True)
+            if args.dashboard:
+                dashboard = refresh_dashboard(project, workspace)
 
-        if new_text == text:
-            raise Stop(f"Session {sessions} didn't change STATUS.md; stopping to avoid a loop.", failed=True)
-        text = new_text
-        if marker == "stop":
-            raise Stop(reason or "The session asked to stop.")
+            if new_text == text:
+                raise Stop(f"Session {sessions} didn't change STATUS.md; stopping to avoid a loop.", failed=True)
+            text = new_text
+            if marker == "stop":
+                raise Stop(reason or "The session asked to stop.")
+    finally:
+        if dashboard:
+            print(paint(f"Progress dashboard: {dashboard}", "dim"), flush=True)
 
 
 def parse_args(argv):
@@ -250,6 +271,8 @@ def parse_args(argv):
                         help="passed to claude (default: acceptEdits; tools outside the allow list are denied)")
     parser.add_argument("--claude-bin", default="claude")
     parser.add_argument("--dry-run", action="store_true", help="print the next session's command and stop")
+    parser.add_argument("--no-dashboard", dest="dashboard", action="store_false",
+                        help="don't refresh progress.html (scripts/progress.py) after each session")
     return parser.parse_args(argv)
 
 
@@ -258,7 +281,7 @@ def main(argv=None):
     try:
         autopilot(args)
     except Stop as stop:
-        print(f"Autopilot stopped: {stop.reason}")
+        print(paint(f"■ Autopilot stopped: {stop.reason}", "red" if stop.failed else "amber"))
         if not stop.failed and not args.dry_run:
             print("Do what it needs in an interactive session, then run autopilot again.")
         return 1 if stop.failed else 0

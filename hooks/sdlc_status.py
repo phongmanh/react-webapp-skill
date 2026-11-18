@@ -95,3 +95,78 @@ def handoff_field(text, name):
         if match:
             return match.group(1).strip()
     return ""
+
+
+def workspaces(project):
+    """The SDLC workspaces (docs/sdlc/<slug>/ folders with a STATUS.md) under a project, sorted."""
+    return [status.parent for status in sorted(project.glob("docs/sdlc/*/STATUS.md"))]
+
+
+def detect_skill(_text):
+    """The skill that owns a STATUS.md. This plugin has one."""
+    return "react-webapp-sdlc"
+
+
+def phase_number(text):
+    """The number that starts the "Current phase" field, or None."""
+    match = re.match(r"\s*(\d+)", field(text, "Current phase"))
+    return int(match.group(1)) if match else None
+
+
+def table_rows(body):
+    """The first table in a section body as dicts keyed by its header cells. Comments are skipped."""
+    lines = []
+    for line in COMMENT.sub("", body).splitlines():
+        if line.lstrip().startswith("|"):
+            lines.append(line)
+        elif lines:
+            break
+    if len(lines) < 2:
+        return []
+    header = cells(lines[0])
+    rows = []
+    for line in lines[2:]:
+        row = cells(line)
+        rows.append({name: row[i] if i < len(row) else "" for i, name in enumerate(header)})
+    return rows
+
+
+def section_rows(text, heading):
+    """table_rows() of the first "## " section whose heading starts with `heading` (any case)."""
+    for name, body in sections(text).items():
+        if name.lower().startswith(heading.lower()):
+            return table_rows(body)
+    return []
+
+
+def column(row, prefix):
+    """The value of the first column whose header starts with `prefix` (any case), or ''.
+
+    Matching by prefix lets "Status" find "Status (Not started / Draft / In review / Approved)".
+    """
+    prefix = prefix.lower()
+    for name, value in row.items():
+        if name.lower().startswith(prefix):
+            return value
+    return ""
+
+
+def plan_progress(text):
+    """The newest phase plan as a dict, or None.
+
+    Keys: heading, phase (its number), rows (table_rows, template placeholder rows dropped),
+    done and total.
+    """
+    plan = newest_plan(text)
+    if plan is None:
+        return None
+    heading, body = plan
+    rows = [row for row in table_rows(body) if len(row) >= 2 and not list(row.values())[1].startswith("<")]
+    done = sum(1 for row in rows if list(row.values())[-1].lower().startswith("done"))
+    return {
+        "heading": heading,
+        "phase": int(PLAN_HEADING.fullmatch(heading).group(1)),
+        "rows": rows,
+        "done": done,
+        "total": len(rows),
+    }

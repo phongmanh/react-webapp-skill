@@ -103,6 +103,8 @@ class AutopilotTest(unittest.TestCase):
         self.assertIn("no open row", self.calls()[2][1])
         log = (self.project / ".claude/autopilot/demo.jsonl").read_text().splitlines()
         self.assertEqual(len(log), 3)
+        self.assertTrue((self.workspace / "progress.html").is_file())
+        self.assertIn("Progress dashboard:", done.stdout)
 
     def test_stops_before_starting_when_waiting_on_user(self):
         self.write_status(status(waiting="G1 sign-off"))
@@ -169,6 +171,7 @@ class AutopilotTest(unittest.TestCase):
         self.assertIn("--disallowedTools", done.stdout)
         self.assertIn("'Bash(git push*)'", done.stdout)
         self.assertIn("react-webapp-skill:react-webapp-sdlc", done.stdout)
+        self.assertFalse((self.workspace / "progress.html").exists())
 
 
 class StatusParserTest(unittest.TestCase):
