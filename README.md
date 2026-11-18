@@ -8,12 +8,13 @@ A Claude Code plugin for building React + TypeScript web apps phase by phase, wi
 /plugin install react-webapp-skill@react-webapp-skill
 ```
 
-## Skill
+## Skills
 | Skill | For | Run |
 |---|---|---|
 | `react-webapp-sdlc` | A React + TypeScript web app or feature: feature-based architecture, Vite + React 19, React Router, TanStack Query, Zod, React Hook Form, Tailwind CSS, OWASP ASVS, WCAG 2.2 AA, Core Web Vitals, Vitest + Testing Library + MSW + Playwright, static hosting release | `/react-webapp-skill:react-webapp-sdlc` |
+| `progress` | Where the work stands: a short summary, plus a colorful dashboard page that opens in your browser | `/react-webapp-skill:progress [slug]` |
 
-Claude also picks the skill on its own when you ask it to plan, design, build, test or release a React web app or feature that way. It bundles phase guides, references (architecture, project setup, code patterns, UI/UX, a default design style, security and privacy, performance, testing, a PR review checklist) and deliverable templates.
+Claude also picks `react-webapp-sdlc` on its own when you ask it to plan, design, build, test or release a React web app or feature that way. It bundles phase guides, references (architecture, project setup, code patterns, UI/UX, a default design style, security and privacy, performance, testing, a PR review checklist) and deliverable templates.
 
 The deliverables live in your project under `docs/sdlc/<initiative-slug>/`, with `STATUS.md` as the control file: phase, gate log, risks, change requests, the current phase plan and the session handoff.
 
@@ -22,11 +23,26 @@ The deliverables live in your project under `docs/sdlc/<initiative-slug>/`, with
 |---|---|---|
 | `session-context.py` | `SessionStart` | For each `docs/sdlc/*/STATUS.md`, shows the current phase, the next open row of the newest `## Phase N plan` and the `## Handoff` section. A session can start after `/clear` and pick up where the last one stopped. |
 | `guard-sdlc-baseline.py` | `PreToolUse` (`Edit`, `Write`, `MultiEdit`) | Asks you to confirm before Claude edits a deliverable that `STATUS.md` marks Approved. A baselined document changes only through an approved change request. |
+| `refresh-progress.py` | `PostToolUse` (`Edit`, `Write`, `MultiEdit`) | After Claude edits a `STATUS.md`, refreshes its progress dashboard, if you've created one. |
 
 Only you can switch the baseline gate off, in your git-ignored `.claude/settings.local.json`:
 ```json
 { "env": { "SDLC_GATE": "off" } }
 ```
+
+## Progress dashboard
+Ask Claude "where are we?" or run:
+```
+/react-webapp-skill:progress            # every workspace
+/react-webapp-skill:progress guest-web  # one workspace
+```
+You get a short summary in the chat, and `progress.html` opens in your browser: a colorful page with the phase timeline, gate decisions, the current phase plan with a progress ring, deliverables, a risk grid, open items, change requests and the handoff, with anything waiting on you highlighted. It follows your light or dark setting and works on a phone.
+
+From then on the page keeps itself current: the `refresh-progress.py` hook rewrites it whenever Claude edits that `STATUS.md`, and autopilot refreshes it after each session. Keep it open and reload. Commit it or git-ignore `docs/sdlc/**/progress.html`, as your team prefers. The page is self-contained apart from its web fonts; offline, it falls back to system fonts.
+
+Outside Claude Code, run the script from anywhere in your project: `python3 <plugin>/scripts/progress.py [<slug>] [--open]`.
+
+**In another skill.** The dashboard reads the shape of `STATUS.md`, not anything web-specific, so other skills can use it too. It needs a `| Field | Value |` header table with a `Current phase` row starting with the phase number. These `##` sections are optional, and any that are missing are left out: `Deliverables`, `Gate log` (gates named `G<n> …`, one per phase), `Risks` (Likelihood and Impact as H/M/L), `Open items`, `Change requests`, `Phase <n> plan` (# · Work · … · Status) and `Handoff` (`- **Next action:**`, `- **Waiting on user:**`, …). Pass it the phase names with `--phases "Discovery,Build,Launch"` or `--skill-dir <your-skill>`, which reads its `phases/<n>-<name>.md` files.
 
 ## Autopilot
 Runs the workflow unattended: `scripts/autopilot.py` starts a fresh headless session (`claude -p`) for each row of the current `## Phase N plan`, and the `session-context.py` hook hands each one the last handoff. Gates still stop: autopilot never records a sign-off.
@@ -48,6 +64,7 @@ python3 <plugin>/scripts/autopilot.py --workspace docs/sdlc/<slug> --budget-usd 
 - **Permissions.** Sessions run with `--permission-mode acceptEdits` and allow file tools, `npm run`, `npm ci`, `npm install`, `npm ls`, `npm audit`, `npm create vite@latest`, `npx playwright install`, `node`, scaffolding helpers (`mkdir`, `cp -Rn`, `rm -rf .scaffold`) and local git (`status`, `diff`, `log`, `branch`, `switch`, `checkout -b`, `add`, `commit`). They deny `git push`, merges, rebases, hard resets, `gh` and `AskUserQuestion`. The baseline gate's confirm becomes a denial. Your project's `.claude/settings.json` allow list still applies.
 - **Dependencies.** Sessions install only what the approved architecture lists; a new dependency is a change request.
 - **Phase 4.** One branch and commit per PR row, stacked on the previous one after `npm run check` passes. You push, open and review the PRs, and you deploy.
+- **Dashboard.** `progress.html` in the workspace is refreshed after each session; `--no-dashboard` turns that off.
 - **Log.** One JSON line per session (time, session ID, plan item, cost, result) in `.claude/autopilot/<slug>.jsonl`; consider git-ignoring `.claude/autopilot/`.
 
 ## Optional: the SDLC rule

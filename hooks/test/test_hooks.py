@@ -8,6 +8,8 @@ import unittest
 from pathlib import Path
 
 HOOKS = Path(__file__).resolve().parent.parent
+sys.path.insert(0, str(HOOKS))
+from sdlc_status import column, plan_progress, section_rows, table_rows  # noqa: E402
 
 STATUS = """# STATUS: Demo
 
@@ -118,6 +120,53 @@ class BaselineGuardTest(ProjectTestCase):
     def test_gate_off_lets_baselined_documents_through(self):
         self.write_status(STATUS)
         self.assertEqual(self.edit("requirements.md", SDLC_GATE="OFF"), "")
+
+
+class RefreshProgressTest(ProjectTestCase):
+    def edit_status(self):
+        payload = {"tool_name": "Edit", "tool_input": {"file_path": str(self.workspace / "STATUS.md")}}
+        return run_hook("refresh-progress.py", self.project, payload)
+
+    def test_creates_no_dashboard_nobody_asked_for(self):
+        self.write_status(STATUS)
+        self.edit_status()
+        self.assertFalse((self.workspace / "progress.html").exists())
+
+    def test_refreshes_an_existing_dashboard(self):
+        self.write_status(STATUS)
+        page = self.workspace / "progress.html"
+        page.write_text("old", encoding="utf-8")
+        done = self.edit_status()
+        self.assertEqual(done.stdout, "")
+        self.assertIn("Phase 4 plan", page.read_text(encoding="utf-8"))
+
+    def test_ignores_other_files_and_never_fails(self):
+        self.write_status("not a status file")
+        page = self.workspace / "progress.html"
+        page.write_text("old", encoding="utf-8")
+        payload = {"tool_name": "Write", "tool_input": {"file_path": str(self.workspace / "requirements.md")}}
+        run_hook("refresh-progress.py", self.project, payload)
+        self.assertEqual(page.read_text(encoding="utf-8"), "old")
+        self.edit_status()  # a STATUS.md without the usual sections still renders, and the hook exits 0
+
+
+class StatusTablesTest(unittest.TestCase):
+    def test_section_rows_key_cells_by_header(self):
+        rows = section_rows(STATUS, "deliverables")
+        self.assertEqual(len(rows), 1)
+        self.assertEqual(column(rows[0], "Status"), "Approved")
+        self.assertEqual(column(rows[0], "version"), "1.0")
+        self.assertEqual(column(rows[0], "Missing"), "")
+        self.assertEqual(section_rows(STATUS, "Risks"), [])
+
+    def test_table_rows_read_only_the_first_table(self):
+        body = "| A | B |\n|---|---|\n| 1 | 2 |\n\ntext\n\n| C |\n|---|\n| 3 |\n"
+        self.assertEqual(table_rows(body), [{"A": "1", "B": "2"}])
+
+    def test_plan_progress_reads_the_newest_plan(self):
+        plan = plan_progress(STATUS)
+        self.assertEqual((plan["heading"], plan["phase"], plan["done"], plan["total"]), ("Phase 4 plan", 4, 1, 2))
+        self.assertIsNone(plan_progress("# nothing"))
 
 
 if __name__ == "__main__":
