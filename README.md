@@ -1,0 +1,65 @@
+# react-webapp-skill
+
+A Claude Code plugin for building React + TypeScript web apps phase by phase, with a gated waterfall lifecycle: requirements, architecture, detailed design, implementation, testing, release and maintenance. Each phase produces reviewed deliverables from fixed templates, and the next phase starts only after an explicit sign-off.
+
+## Install
+```
+/plugin marketplace add phongmanh/react-webapp-skill
+/plugin install react-webapp-skill@react-webapp-skill
+```
+
+## Skill
+| Skill | For | Run |
+|---|---|---|
+| `react-webapp-sdlc` | A React + TypeScript web app or feature: feature-based architecture, Vite + React 19, React Router, TanStack Query, Zod, React Hook Form, Tailwind CSS, OWASP ASVS, WCAG 2.2 AA, Core Web Vitals, Vitest + Testing Library + MSW + Playwright, static hosting release | `/react-webapp-skill:react-webapp-sdlc` |
+
+Claude also picks the skill on its own when you ask it to plan, design, build, test or release a React web app or feature that way. It bundles phase guides, references (architecture, project setup, code patterns, UI/UX, a default design style, security and privacy, performance, testing, a PR review checklist) and deliverable templates.
+
+The deliverables live in your project under `docs/sdlc/<initiative-slug>/`, with `STATUS.md` as the control file: phase, gate log, risks, change requests, the current phase plan and the session handoff.
+
+## Hooks
+| Hook | Event | What it does |
+|---|---|---|
+| `session-context.py` | `SessionStart` | For each `docs/sdlc/*/STATUS.md`, shows the current phase, the next open row of the newest `## Phase N plan` and the `## Handoff` section. A session can start after `/clear` and pick up where the last one stopped. |
+| `guard-sdlc-baseline.py` | `PreToolUse` (`Edit`, `Write`, `MultiEdit`) | Asks you to confirm before Claude edits a deliverable that `STATUS.md` marks Approved. A baselined document changes only through an approved change request. |
+
+Only you can switch the baseline gate off, in your git-ignored `.claude/settings.local.json`:
+```json
+{ "env": { "SDLC_GATE": "off" } }
+```
+
+## Autopilot
+Runs the workflow unattended: `scripts/autopilot.py` starts a fresh headless session (`claude -p`) for each row of the current `## Phase N plan`, and the `session-context.py` hook hands each one the last handoff. Gates still stop: autopilot never records a sign-off.
+
+Do scope and the first phase plan interactively, then ask Claude to "run autopilot", or run it yourself from the project root. The script is in the installed plugin (`~/.claude/plugins/cache/react-webapp-skill/react-webapp-skill/<version>/scripts/`) or your clone of this repo:
+```
+python3 <plugin>/scripts/autopilot.py --workspace docs/sdlc/<slug> --dry-run
+python3 <plugin>/scripts/autopilot.py --workspace docs/sdlc/<slug> --budget-usd 20
+```
+
+| It stops when | Then you |
+|---|---|
+| The Handoff's **Waiting on user** isn't "nothing" (e.g. `G1 sign-off`, a decision, a CR approval) | Decide or sign off in an interactive session, set it back to "nothing", re-run |
+| The next plan row is `Blocked: <reason>` | Unblock it, re-run |
+| Phase 4 with code review mode *Approve before writing* | Switch to *Review after writing*, or continue interactively |
+| A session fails, changes nothing in STATUS.md, or ends with `AUTOPILOT-RESULT: stop` | Read the reason and the log |
+| `--max-sessions` (default 20) or `--budget-usd` is reached | Re-run when ready |
+
+- **Permissions.** Sessions run with `--permission-mode acceptEdits` and allow file tools, `npm run`, `npm ci`, `npm install`, `npm ls`, `npm audit`, `npm create vite@latest`, `npx playwright install`, `node`, scaffolding helpers (`mkdir`, `cp -Rn`, `rm -rf .scaffold`) and local git (`status`, `diff`, `log`, `branch`, `switch`, `checkout -b`, `add`, `commit`). They deny `git push`, merges, rebases, hard resets, `gh` and `AskUserQuestion`. The baseline gate's confirm becomes a denial. Your project's `.claude/settings.json` allow list still applies.
+- **Dependencies.** Sessions install only what the approved architecture lists; a new dependency is a change request.
+- **Phase 4.** One branch and commit per PR row, stacked on the previous one after `npm run check` passes. You push, open and review the PRs, and you deploy.
+- **Log.** One JSON line per session (time, session ID, plan item, cost, result) in `.claude/autopilot/<slug>.jsonl`; consider git-ignoring `.claude/autopilot/`.
+
+## Optional: the SDLC rule
+Plugins can't ship rule files. `rules/sdlc.md` restates the document rules (IDs, baselines, gate decisions, handoff format) and loads only while Claude edits `docs/sdlc/**`. To use it, copy it into your project as `.claude/rules/sdlc.md`.
+
+## Development
+Run the hook and autopilot tests from the repo root:
+```
+python3 -m unittest discover -s hooks/test
+python3 -m unittest discover -s scripts/test
+```
+Check the plugin and the marketplace with `claude plugin validate .`.
+
+## License
+MIT. See [LICENSE](LICENSE).

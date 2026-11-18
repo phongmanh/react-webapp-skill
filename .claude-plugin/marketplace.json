@@ -1,0 +1,14 @@
+{
+  "name": "react-webapp-skill",
+  "description": "Waterfall SDLC skill for React + TypeScript web apps.",
+  "owner": {
+    "name": "Manh Nguyen"
+  },
+  "plugins": [
+    {
+      "name": "react-webapp-skill",
+      "source": "./",
+      "description": "Waterfall SDLC skill for React + TypeScript web apps, with the SDLC baseline-gate and session-handoff hooks and an autopilot mode."
+    }
+  ]
+}

@@ -1,0 +1,19 @@
+{
+  "$schema": "https://anthropic.com/claude-code/plugin.schema.json",
+  "name": "react-webapp-skill",
+  "version": "0.1.0",
+  "description": "Waterfall SDLC skill for React + TypeScript web apps, with phase gates, templates and code patterns, plus hooks for the baseline gate and session handoff, and an autopilot that runs one fresh session per plan item.",
+  "author": {
+    "name": "Manh Nguyen"
+  },
+  "repository": "https://github.com/phongmanh/react-webapp-skill",
+  "keywords": [
+    "react",
+    "typescript",
+    "vite",
+    "web",
+    "sdlc",
+    "waterfall"
+  ],
+  "license": "MIT"
+}
