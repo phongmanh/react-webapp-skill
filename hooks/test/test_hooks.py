@@ -122,6 +122,35 @@ class BaselineGuardTest(ProjectTestCase):
         self.assertEqual(self.edit("requirements.md", SDLC_GATE="OFF"), "")
 
 
+class LargeReadGuardTest(ProjectTestCase):
+    def read(self, path, **tool_input):
+        payload = {"tool_name": "Read", "tool_input": {"file_path": str(path), **tool_input}}
+        return run_hook("guard-large-read.py", self.project, payload).stdout
+
+    def large_design(self):
+        body = "".join(f"## {n}. Section\n" + "x" * 2000 + "\n" for n in range(1, 21))
+        path = self.workspace / "design/menu.md"
+        path.parent.mkdir()
+        path.write_text("# Feature design: Menu\n" + body, encoding="utf-8")
+        return path
+
+    def test_refuses_a_whole_read_of_a_large_document_and_returns_its_outline(self):
+        decision = json.loads(self.read(self.large_design()))["hookSpecificOutput"]
+        self.assertEqual(decision["permissionDecision"], "deny")
+        self.assertIn("1: # Feature design: Menu", decision["permissionDecisionReason"])
+        self.assertIn("2: ## 1. Section", decision["permissionDecisionReason"])
+
+    def test_lets_a_ranged_read_through(self):
+        self.assertEqual(self.read(self.large_design(), offset=2, limit=40), "")
+
+    def test_lets_small_files_and_files_outside_the_workspace_through(self):
+        self.write_status(STATUS)
+        self.assertEqual(self.read(self.workspace / "STATUS.md"), "")
+        outside = self.project / "big.md"
+        outside.write_text("x" * 30_000, encoding="utf-8")
+        self.assertEqual(self.read(outside), "")
+
+
 class RefreshProgressTest(ProjectTestCase):
     def edit_status(self):
         payload = {"tool_name": "Edit", "tool_input": {"file_path": str(self.workspace / "STATUS.md")}}

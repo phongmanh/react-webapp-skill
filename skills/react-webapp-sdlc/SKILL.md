@@ -69,7 +69,7 @@ A small feature may combine G2 and G3 into one review. **G5 is never skipped or 
 
    Record the answers and pick the tailoring column.
 4. **Load only what's needed:** the current phase file and the references its **Load** line lists. If STATUS.md doesn't show the previous gate as approved, stop and say so.
-   Read the workspace's documents and inputs the same way. For any file over a few hundred lines, find its headings with `grep -n '^#'` and read only the sections the Handoff's **Load** names, by line range. Reading a whole architecture, design or contract file costs every later call in the session.
+   Read the workspace's documents and inputs the same way. For any file over about 24 KB (STATUS.md, designs, the architecture, contracts), read only the sections the Handoff's **Load** names, by line range; the plugin's Read hook refuses a whole read of such a file under `docs/sdlc/` and returns its outline with line numbers. Reading a whole architecture, design or contract file costs every later call in the session.
 5. **Write the deliverables** from `templates/` into the workspace.
    - Mark unknowns `TBD-<n>` and assumptions `ASSUMPTION:`, and list them in STATUS.md.
    - Ask the user for what only stakeholders can decide: targets, priorities, approvers.
@@ -81,6 +81,7 @@ A small feature may combine G2 and G3 into one review. **G5 is never skipped or 
 9. **After a baseline,** every change to an approved deliverable goes through a [change request](templates/change-request.md): RTM impact analysis → decision → update the affected deliverables → re-check the affected gates.
    Once the gate decision is in the gate log, move that phase's `## Phase <n> plan` and its `## G<n> review` to `STATUS-archive.md` in the workspace. STATUS.md is read every session, so it holds only what is current.
 10. **End of session.** Finish one unit of work per session. Before stopping, update the deliverable, its row in STATUS.md's current `## Phase <n> plan`, and rewrite the `## Handoff` section from the template. Group the STATUS.md changes into as few edits as you can: by now the context is at its largest, and every tool call re-sends all of it. In [autopilot](#autopilot) the next session starts on its own, so don't tell the user to `/clear`.
+    The plugin's hook rewrites `progress.html` after every STATUS.md edit, so it shows as changed in `git status`; that change is expected and needs no check.
 
 **Partial use.** If the user wants a single deliverable (e.g. "write the feature design for sign-in"), produce just that one, following its phase's guidance. Mention any missing upstream inputs, but don't force the whole lifecycle.
 
@@ -107,13 +108,15 @@ Unattended mode: a driver script starts a fresh headless session (`claude -p`) f
 **Starting it** (interactive session, when the user asks for autopilot):
 1. Check that Scope (step 3) is done and STATUS.md has a `## Phase <n> plan` with real rows. If not, do those first, with the user.
 2. In Phase 4, **Code review mode** must be *Review after writing*. *Approve before writing* needs the owner for every PR, so autopilot refuses it.
-3. Run, from the project root, with Bash `run_in_background`: `python3 <this skill's base directory>/../../scripts/autopilot.py --workspace docs/sdlc/<slug>`. Use `--dry-run` first to show the user the command. Options: `--model` (default: Claude Code's), `--max-sessions` (default 20), `--budget-usd`, `--session-timeout` (minutes).
+3. Run, from the project root, with Bash `run_in_background`: `python3 <this skill's base directory>/../../scripts/autopilot.py --workspace docs/sdlc/<slug>`. Use `--dry-run` first to show the user the command. Options: `--model` and `--effort` (default: Claude Code's), `--max-sessions` (default 20), `--budget-usd`, `--session-timeout` (minutes).
 4. Tell the user it stops by itself when it needs them, that `TaskStop` (or Ctrl-C) stops it early, and that each session is logged in `.claude/autopilot/<slug>.jsonl`.
 
 **The driver stops when:** the Handoff's **Waiting on user** isn't "nothing"; the next plan row is `Blocked`; a session fails, changes nothing in STATUS.md, or ends with `AUTOPILOT-RESULT: stop`; or the session or budget cap is reached. It denies `git push`, `gh`, merges, rebases, hard resets and `AskUserQuestion`; the baseline gate's confirm becomes a denial.
 
 **Inside an autopilot session** (the prompt says AUTOPILOT):
 - Do exactly one plan row, then the End of session step (10). If the plan has no open row: when the gate log approves the current phase's gate, set the next phase in STATUS.md and write its `## Phase <n> plan`; otherwise run the gate review (step 7).
+- **Large rows:** if the context is getting large before the row is done, save the sections you finished, leave the row `In progress`, put what's left in the Handoff's **Next action**, and end the session with `AUTOPILOT-RESULT: continue`.
+- **Cut-off sessions:** if `git status` shows work the Handoff doesn't mention (an earlier session may have been cut off), continue from it instead of starting the row over.
 - **Never ask.** Anything only the owner can decide (step 5) becomes an Open item; set the row to `Blocked: <reason>` and **Waiting on user** to the decision, then stop. **(proposed)** numbers stay proposed.
 - **Gate row:** run the exit checklist and write the gate review (checklist results, open TBDs, top risks, recommendation) as a `## G<n> review` section just above the Handoff. Set **Waiting on user** to `G<n> sign-off`. Never write the gate log or a tag.
 - **Baselines:** never edit an Approved deliverable. A needed change becomes a draft CR, and the row is Blocked on its approval.

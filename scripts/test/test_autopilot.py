@@ -173,6 +173,11 @@ class AutopilotTest(unittest.TestCase):
         self.assertIn("react-webapp-skill:react-webapp-sdlc", done.stdout)
         self.assertFalse((self.workspace / "progress.html").exists())
 
+    def test_passes_effort_only_when_set(self):
+        self.write_status(status())
+        self.assertNotIn("--effort", self.run_autopilot("--dry-run").stdout)
+        self.assertIn("--effort high", self.run_autopilot("--dry-run", "--effort", "high").stdout)
+
 
 class StatusParserTest(unittest.TestCase):
     def test_next_plan_row(self):
