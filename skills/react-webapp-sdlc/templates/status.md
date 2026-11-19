@@ -66,7 +66,7 @@ A TBD that blocks a Must requirement blocks the gate.
 |---|---|---|---|---|---|
 
 ## Phase 1 plan
-One row per unit of work, each sized for one session. Start a new `## Phase <n> plan` table when a phase starts; the SessionStart hook reads the newest one and shows its first row that isn't Done. Status is one of: Not started / In progress / Done / Blocked: <reason>. Autopilot stops at a Blocked row.
+One row per unit of work, each sized for one session: in Phase 3, one small feature design, or a large one in two rows (§1–§5, then §6–§10 and the RTM). Start a new `## Phase <n> plan` table when a phase starts; the SessionStart hook reads the newest one and shows its first row that isn't Done. Status is one of: Not started / In progress / Done / Blocked: <reason>. Autopilot stops at a Blocked row.
 
 | # | Work | Covers | Needs from the owner | Status |
 |---|---|---|---|---|
