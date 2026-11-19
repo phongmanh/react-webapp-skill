@@ -159,6 +159,8 @@ def build_command(args, prompt, budget_left):
         "--allowedTools", *ALLOWED_TOOLS,
         "--disallowedTools", *DISALLOWED_TOOLS,
     ]
+    if getattr(args, "model", None):
+        command += ["--model", args.model]
     if budget_left is not None:
         command += ["--max-budget-usd", f"{budget_left:.2f}"]
     return command
@@ -264,6 +266,7 @@ def parse_args(argv):
     parser.add_argument("--project", default=".", help="the target project's root (default: current directory)")
     parser.add_argument("--workspace", help="docs/sdlc/<slug>, relative to the project (default: the only one)")
     parser.add_argument("--skill", choices=(SKILL,), help="default: react-webapp-sdlc")
+    parser.add_argument("--model", help="model for each session (default: Claude Code's)")
     parser.add_argument("--max-sessions", type=int, default=20)
     parser.add_argument("--budget-usd", type=float, help="stop once the sessions together have cost this much")
     parser.add_argument("--session-timeout", type=int, default=90, help="minutes per session (default: 90)")

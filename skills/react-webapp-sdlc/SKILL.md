@@ -50,7 +50,7 @@ A gated, document-driven lifecycle for building a React + TypeScript web app, or
 A small feature may combine G2 and G3 into one review. **G5 is never skipped or combined.**
 
 ## How Claude runs this workflow
-1. **Workspace.** In the target project, open `docs/sdlc/<initiative-slug>/STATUS.md`. If it exists, resume at the phase it records, starting from its `## Handoff`. If not, create it from [templates/status.md](templates/status.md).
+1. **Workspace.** In the target project, find `docs/sdlc/<initiative-slug>/STATUS.md`. If it exists, resume from its `## Handoff`; the SessionStart hook already shows it with the phase and the next plan row, so read only the STATUS.md sections the task needs (the gate log, the current plan, open items). If not, create it from [templates/status.md](templates/status.md).
 2. **Facts.**
    - In an existing web project, read `package.json`, the lockfile type, `tsconfig*.json`, `vite.config.*` (or the framework config), the lint and format config, `.nvmrc`, `CLAUDE.md` and `.claude/rules/`. Record the framework, the router, the data layer, the styling approach and the Node version in STATUS.md. Don't contradict them without an ADR.
    - When a backend, an API contract or a design already exists, read them as inputs:
@@ -69,16 +69,18 @@ A small feature may combine G2 and G3 into one review. **G5 is never skipped or 
 
    Record the answers and pick the tailoring column.
 4. **Load only what's needed:** the current phase file and the references its **Load** line lists. If STATUS.md doesn't show the previous gate as approved, stop and say so.
+   Read the workspace's documents and inputs the same way. For any file over a few hundred lines, find its headings with `grep -n '^#'` and read only the sections the Handoff's **Load** names, by line range. Reading a whole architecture, design or contract file costs every later call in the session.
 5. **Write the deliverables** from `templates/` into the workspace.
    - Mark unknowns `TBD-<n>` and assumptions `ASSUMPTION:`, and list them in STATUS.md.
    - Ask the user for what only stakeholders can decide: targets, priorities, approvers.
    - Never invent requirements, numbers, approvals or sign-offs.
    - Mark any number Claude suggests (an NFR target, a budget) as **(proposed)**. Confirming those numbers is a TBD that blocks G1.
-6. **Trace.** Add every new requirement, design element and test to `rtm.md`.
+6. **Trace.** Add every new requirement, design element and test to `rtm.md`, all in one edit (or one Write) rather than one edit per row.
 7. **Gate review.** Run the phase's exit checklist. Present the deliverables and their status, the checklist results, open TBDs, top risks, and a recommendation: approve, approve with conditions, or rework.
 8. **STOP for sign-off.** Ask for the decision and the approver's name and role. Record both in the STATUS.md gate log and suggest a git tag (`sdlc/<slug>/G<n>`). A waiver records the accepted risk and who accepted it.
 9. **After a baseline,** every change to an approved deliverable goes through a [change request](templates/change-request.md): RTM impact analysis → decision → update the affected deliverables → re-check the affected gates.
-10. **End of session.** Finish one unit of work per session. Before stopping, update the deliverable, its row in STATUS.md's current `## Phase <n> plan`, and rewrite the `## Handoff` section from the template. In [autopilot](#autopilot) the next session starts on its own, so don't tell the user to `/clear`.
+   Once the gate decision is in the gate log, move that phase's `## Phase <n> plan` and its `## G<n> review` to `STATUS-archive.md` in the workspace. STATUS.md is read every session, so it holds only what is current.
+10. **End of session.** Finish one unit of work per session. Before stopping, update the deliverable, its row in STATUS.md's current `## Phase <n> plan`, and rewrite the `## Handoff` section from the template. Group the STATUS.md changes into as few edits as you can: by now the context is at its largest, and every tool call re-sends all of it. In [autopilot](#autopilot) the next session starts on its own, so don't tell the user to `/clear`.
 
 **Partial use.** If the user wants a single deliverable (e.g. "write the feature design for sign-in"), produce just that one, following its phase's guidance. Mention any missing upstream inputs, but don't force the whole lifecycle.
 
@@ -105,7 +107,7 @@ Unattended mode: a driver script starts a fresh headless session (`claude -p`) f
 **Starting it** (interactive session, when the user asks for autopilot):
 1. Check that Scope (step 3) is done and STATUS.md has a `## Phase <n> plan` with real rows. If not, do those first, with the user.
 2. In Phase 4, **Code review mode** must be *Review after writing*. *Approve before writing* needs the owner for every PR, so autopilot refuses it.
-3. Run, from the project root, with Bash `run_in_background`: `python3 <this skill's base directory>/../../scripts/autopilot.py --workspace docs/sdlc/<slug>`. Use `--dry-run` first to show the user the command. Options: `--max-sessions` (default 20), `--budget-usd`, `--session-timeout` (minutes).
+3. Run, from the project root, with Bash `run_in_background`: `python3 <this skill's base directory>/../../scripts/autopilot.py --workspace docs/sdlc/<slug>`. Use `--dry-run` first to show the user the command. Options: `--model` (default: Claude Code's), `--max-sessions` (default 20), `--budget-usd`, `--session-timeout` (minutes).
 4. Tell the user it stops by itself when it needs them, that `TaskStop` (or Ctrl-C) stops it early, and that each session is logged in `.claude/autopilot/<slug>.jsonl`.
 
 **The driver stops when:** the Handoff's **Waiting on user** isn't "nothing"; the next plan row is `Blocked`; a session fails, changes nothing in STATUS.md, or ends with `AUTOPILOT-RESULT: stop`; or the session or budget cap is reached. It denies `git push`, `gh`, merges, rebases, hard resets and `AskUserQuestion`; the baseline gate's confirm becomes a denial.
