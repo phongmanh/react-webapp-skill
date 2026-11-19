@@ -30,4 +30,4 @@ Applies to the deliverables of the react-webapp-sdlc workflow (`/react-webapp-sk
   - **Inputs:** <where external sources are cached or pinned, with versions and commits>
   - **Waiting on user:** <decision, approval or review, or "nothing">
   ```
-- **Keep documents short:** tables and bullets over prose; link instead of repeating.
+- **Keep documents short, because every later session re-reads them:** a feature design is read by each feature that depends on it, so its size is paid many times. Keep to the template's sections and give each fact once. Cite another document by section (`architecture.md §5.4`) instead of restating it. Write signatures and types, not full implementations; the code holds those in Phase 4. Use one table row per case, without paragraphs around it.

@@ -22,7 +22,8 @@ HANDOFF_MAX_CHARS = 3000
 
 def describe(project_dir, status_file):
     text = status_file.read_text(encoding="utf-8")
-    lines = [f"SDLC workspace {status_file.parent.relative_to(project_dir)}/ (read STATUS.md for the detail):"]
+    lines = [f"SDLC workspace {status_file.parent.relative_to(project_dir)}/ (this is STATUS.md's summary; "
+             "read other sections of it only when the task needs them):"]
     for name in ("Current phase", "Code review mode", "Last updated"):
         value = field(text, name)
         if value:

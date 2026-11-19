@@ -77,6 +77,6 @@ One row per unit of work, each sized for one session. Start a new `## Phase <n> 
 - **Last session:** YYYY-MM-DD — <what got done, one line>
 - **State:** <e.g. "G1 awaiting sign-off">
 - **Next action:** <the exact first step for the next session>
-- **Load:** <files and sections to read first>
+- **Load:** <files with the sections or line ranges to read first, e.g. `design/menu.md` §2 (L232–417)>
 - **Inputs:** <where external sources are cached or pinned, with versions and commits, or "none">
 - **Waiting on user:** <decision, approval or review, or "nothing">
