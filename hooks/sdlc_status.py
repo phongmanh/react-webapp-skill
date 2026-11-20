@@ -104,7 +104,7 @@ def workspaces(project):
 
 def detect_skill(_text):
     """The skill that owns a STATUS.md. This plugin has one."""
-    return "react-webapp-sdlc"
+    return "react-webapp"
 
 
 def phase_number(text):

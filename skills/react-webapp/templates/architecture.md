@@ -13,7 +13,7 @@
 Constraints: <team, deadline, backend, identity provider, compliance>
 
 ## 2. Stack
-The default stack from the react-webapp-sdlc skill applies, except for:
+The default stack from the react-webapp skill applies, except for:
 
 | Concern | Choice | ADR |
 |---|---|---|

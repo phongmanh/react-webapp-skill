@@ -1,7 +1,7 @@
 {
   "$schema": "https://anthropic.com/claude-code/plugin.schema.json",
-  "name": "react-webapp-skill",
-  "version": "0.4.0",
+  "name": "react-webapp",
+  "version": "0.5.0",
   "description": "Waterfall SDLC skill for React + TypeScript web apps, with phase gates, templates and code patterns, plus hooks for the baseline gate and session handoff, an autopilot that runs one fresh session per plan item, and a progress dashboard generated from STATUS.md.",
   "author": {
     "name": "Manh Nguyen"

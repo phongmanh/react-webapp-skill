@@ -8,7 +8,7 @@ needs. Every token read stays in the context and is re-sent on every later
 call, so a whole design or contract read early in a session is paid many times
 over.
 
-Registered by the react-webapp-skill plugin in hooks/hooks.json.
+Registered by the react-webapp plugin in hooks/hooks.json.
 """
 import json
 import re
@@ -59,7 +59,7 @@ def main():
         return 0
     what = "That range" if ranged else path.name
     reason = (
-        f"{what} is {size // 1000} KB, too large to read at once (react-webapp-skill; limit "
+        f"{what} is {size // 1000} KB, too large to read at once (react-webapp plugin; limit "
         f"{MAX_BYTES // 1000} KB per Read). Read only the sections this task needs, with offset and limit. "
         f"Outline of {path.name} (line: heading):\n{outline(path)}"
     )

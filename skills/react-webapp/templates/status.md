@@ -1,13 +1,13 @@
 # STATUS: <Initiative name>
 
-> The control file for the react-webapp-sdlc workflow. Claude reads it first to resume work.
+> The control file for the react-webapp workflow. Claude reads it first to resume work.
 >
 > Keep it current. It's the single place for gate decisions, risks and open items.
 
 | Field | Value |
 |---|---|
 | Initiative | <name> (`docs/sdlc/<initiative-slug>/`) |
-| Skill | react-webapp-sdlc |
+| Skill | react-webapp |
 | Type | New app / Feature in <app> |
 | App location | e.g. repository root, or `apps/web/` |
 | Stack | e.g. Vite + React 19 + TypeScript · React Router · TanStack Query · Tailwind (ADR-<n> for deviations) |

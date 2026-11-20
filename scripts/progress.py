@@ -10,7 +10,7 @@ Phase names come from, in order: --phases "A,B,C"; --skill-dir <skill> (its
 phases/<n>-<name>.md files); the plugin's own skill that the STATUS.md belongs to;
 otherwise "Phase <n>".
 
-Usage, from anywhere inside the target project (or /react-webapp-skill:progress in Claude Code):
+Usage, from anywhere inside the target project (or /react-webapp:progress in Claude Code):
     python3 <plugin>/scripts/progress.py [<slug>] [--open]
 It writes progress.html next to STATUS.md (or docs/sdlc/progress.html for several
 workspaces), prints a short summary and the page's path. Once a page exists, the
