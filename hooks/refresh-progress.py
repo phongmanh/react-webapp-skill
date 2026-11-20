@@ -4,11 +4,11 @@
 Keeps the progress dashboard current. After Claude edits docs/sdlc/<slug>/STATUS.md,
 it rewrites that workspace's progress.html, and the all-workspaces
 docs/sdlc/progress.html, with scripts/progress.py. It only refreshes pages that
-already exist: /react-webapp-skill:progress (or progress.py) creates the first one, so
+already exist: /react-webapp:progress (or progress.py) creates the first one, so
 projects that never asked for a dashboard get no new files. It prints nothing
 and never blocks.
 
-Registered by the react-webapp-skill plugin in hooks/hooks.json.
+Registered by the react-webapp plugin in hooks/hooks.json.
 """
 import json
 import re

@@ -129,8 +129,12 @@ class RenderTest(unittest.TestCase):
             self.assertNotIn(absent, page)
         self.assertIn("<h1>Tiny</h1>", page)
 
+    def test_status_from_before_the_rename_still_gets_phase_names(self):
+        old = "# STATUS: Old\n\n| Field | Value |\n|---|---|\n| Skill | react-webapp-sdlc |\n| Current phase | 3 Detailed design |\n"
+        self.assertEqual(progress.phase_names(old)[3], "Detailed design")
+
     def test_the_blank_template_renders_without_placeholders(self):
-        for skill in ("react-webapp-sdlc",):
+        for skill in ("react-webapp",):
             with self.subTest(skill=skill):
                 text = (REPO / "skills" / skill / "templates/status.md").read_text(encoding="utf-8")
                 page = render(text)

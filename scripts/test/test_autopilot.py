@@ -172,7 +172,7 @@ class AutopilotTest(unittest.TestCase):
         self.assertEqual(self.calls(), [])
         self.assertIn("--disallowedTools", done.stdout)
         self.assertIn("'Bash(git push*)'", done.stdout)
-        self.assertIn("react-webapp-skill:react-webapp-sdlc", done.stdout)
+        self.assertIn("react-webapp:react-webapp", done.stdout)
         self.assertFalse((self.workspace / "progress.html").exists())
 
     def test_passes_effort_only_when_set(self):

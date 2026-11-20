@@ -1,20 +1,30 @@
-# react-webapp-skill
+# react-webapp
 
 A Claude Code plugin for building React + TypeScript web apps phase by phase, with a gated waterfall lifecycle: requirements, architecture, detailed design, implementation, testing, release and maintenance. Each phase produces reviewed deliverables from fixed templates, and the next phase starts only after an explicit sign-off.
 
 ## Install
 ```
 /plugin marketplace add phongmanh/react-webapp-skill
-/plugin install react-webapp-skill@react-webapp-skill
+/plugin install react-webapp@react-webapp
 ```
+
+**Upgrading from 0.4 (`react-webapp-skill`)?** The plugin was renamed. Remove the old one first, or its hooks run twice next to the new ones:
+```
+/plugin uninstall react-webapp-skill@react-webapp-skill
+/plugin marketplace remove react-webapp-skill
+/plugin marketplace add phongmanh/react-webapp-skill
+/plugin install react-webapp@react-webapp
+```
+Existing `docs/sdlc/` workspaces keep working as they are.
 
 ## Skills
 | Skill | For | Run |
 |---|---|---|
-| `react-webapp-sdlc` | A React + TypeScript web app or feature: feature-based architecture, Vite + React 19, React Router, TanStack Query, Zod, React Hook Form, Tailwind CSS, OWASP ASVS, WCAG 2.2 AA, Core Web Vitals, Vitest + Testing Library + MSW + Playwright, static hosting release | `/react-webapp-skill:react-webapp-sdlc` |
-| `progress` | Where the work stands: a short summary, plus a colorful dashboard page that opens in your browser | `/react-webapp-skill:progress [slug]` |
+| `react-webapp` | A React + TypeScript web app or feature: feature-based architecture, Vite + React 19, React Router, TanStack Query, Zod, React Hook Form, Tailwind CSS, OWASP ASVS, WCAG 2.2 AA, Core Web Vitals, Vitest + Testing Library + MSW + Playwright, static hosting release | `/react-webapp` |
+| `autopilot` | Running the current phase plan unattended, one fresh session per row, until it needs you | `/react-webapp:autopilot [slug]` |
+| `progress` | Where the work stands: a short summary, plus a colorful dashboard page that opens in your browser | `/react-webapp:progress [slug]` |
 
-Claude also picks `react-webapp-sdlc` on its own when you ask it to plan, design, build, test or release a React web app or feature that way. It bundles phase guides, references (architecture, project setup, code patterns, UI/UX, a default design style, security and privacy, performance, testing, a PR review checklist) and deliverable templates.
+Claude also picks `react-webapp` on its own when you ask it to plan, design, build, test or release a React web app or feature that way. It bundles phase guides, references (architecture, project setup, code patterns, UI/UX, a default design style, security and privacy, performance, testing, a PR review checklist) and deliverable templates.
 
 The deliverables live in your project under `docs/sdlc/<initiative-slug>/`, with `STATUS.md` as the control file: phase, gate log, risks, change requests, the current phase plan and the session handoff.
 
@@ -34,8 +44,8 @@ Only you can switch the baseline gate off, in your git-ignored `.claude/settings
 ## Progress dashboard
 Ask Claude "where are we?" or run:
 ```
-/react-webapp-skill:progress            # every workspace
-/react-webapp-skill:progress guest-web  # one workspace
+/react-webapp:progress            # every workspace
+/react-webapp:progress guest-web  # one workspace
 ```
 You get a short summary in the chat, and `progress.html` opens in your browser: a colorful page with the phase timeline, gate decisions, the current phase plan with a progress ring, deliverables, a risk grid, open items, change requests and the handoff, with anything waiting on you highlighted. It follows your light or dark setting and works on a phone.
 
@@ -48,7 +58,7 @@ Outside Claude Code, run the script from anywhere in your project: `python3 <plu
 ## Autopilot
 Runs the workflow unattended: `scripts/autopilot.py` starts a fresh headless session (`claude -p`) for each row of the current `## Phase N plan`, and the `session-context.py` hook hands each one the last handoff. Gates still stop: autopilot never records a sign-off.
 
-Do scope and the first phase plan interactively, then ask Claude to "run autopilot", or run it yourself from the project root. The script is in the installed plugin (`~/.claude/plugins/cache/react-webapp-skill/react-webapp-skill/<version>/scripts/`) or your clone of this repo:
+Do scope and the first phase plan interactively, then run `/react-webapp:autopilot [slug]` (or ask Claude to "run autopilot"), or run it yourself from the project root. The script is in the installed plugin (`~/.claude/plugins/cache/react-webapp/react-webapp/<version>/scripts/`) or your clone of this repo:
 ```
 python3 <plugin>/scripts/autopilot.py --workspace docs/sdlc/<slug> --dry-run
 python3 <plugin>/scripts/autopilot.py --workspace docs/sdlc/<slug> --budget-usd 20

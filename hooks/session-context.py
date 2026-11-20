@@ -7,7 +7,7 @@ of re-reading everything. It prints the current phase, the next open item of
 the current phase plan and the "## Handoff" section, which the SDLC skill
 rewrites at the end of every session. Stdout becomes session context.
 
-Registered by the react-webapp-skill plugin in hooks/hooks.json.
+Registered by the react-webapp plugin in hooks/hooks.json.
 """
 import json
 import os

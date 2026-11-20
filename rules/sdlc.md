@@ -4,10 +4,10 @@ paths:
 ---
 # SDLC Documents
 
-Applies to the deliverables of the react-webapp-sdlc workflow (`/react-webapp-skill:react-webapp-sdlc`) under `docs/sdlc/<initiative-slug>/`.
+Applies to the deliverables of the react-webapp workflow (`/react-webapp`) under `docs/sdlc/<initiative-slug>/`.
 
 - **Start from `STATUS.md`.** Check the current phase, and confirm the previous gate is approved before writing a later phase's deliverable.
-- **Follow the template** in the react-webapp-sdlc skill's `templates/`, keeping its section order and tables.
+- **Follow the template** in the react-webapp skill's `templates/`, keeping its section order and tables.
 - **IDs everywhere:**
   - `FR-nnn`;
   - `NFR-<ATTR>-nn`, with the attributes the skill lists;

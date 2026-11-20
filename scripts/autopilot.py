@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-"""Autopilot for the react-webapp-sdlc skill: one fresh headless Claude session per plan item.
+"""Autopilot for the react-webapp skill: one fresh headless Claude session per plan item.
 
 Runs `claude -p` in a loop. Each session does the next open row of the newest
 "## Phase N plan" in docs/sdlc/<slug>/STATUS.md and rewrites the "## Handoff";
@@ -35,7 +35,7 @@ from sdlc_status import (  # noqa: E402
     detect_skill, field, handoff_field, newest_plan, next_plan_row, phase_number, plan_rows, workspaces,
 )
 
-SKILL = "react-webapp-sdlc"
+SKILL = "react-webapp"
 RESULT_LINE = re.compile(r"^AUTOPILOT-RESULT:\s*(continue|stop)\b\s*(.*)$", re.IGNORECASE)
 NOTHING = ("nothing", "none", "—", "-", "n/a")
 
@@ -137,7 +137,7 @@ def check_can_continue(text):
 
 
 def session_prompt(skill, workspace_rel, row):
-    head = f"Use the react-webapp-skill:{skill} skill in AUTOPILOT mode. Workspace: {workspace_rel}/."
+    head = f"Use the react-webapp:{skill} skill in AUTOPILOT mode. Workspace: {workspace_rel}/."
     if row:
         return (
             f"{head} Do {row['plan']} #{row['number']}: {row['work']} - only this item - "
@@ -275,10 +275,10 @@ def autopilot(args):
 
 
 def parse_args(argv):
-    parser = argparse.ArgumentParser(description="Run the react-webapp-sdlc skill unattended, one session per plan item.")
+    parser = argparse.ArgumentParser(description="Run the react-webapp skill unattended, one session per plan item.")
     parser.add_argument("--project", default=".", help="the target project's root (default: current directory)")
     parser.add_argument("--workspace", help="docs/sdlc/<slug>, relative to the project (default: the only one)")
-    parser.add_argument("--skill", choices=(SKILL,), help="default: react-webapp-sdlc")
+    parser.add_argument("--skill", choices=(SKILL,), help="default: react-webapp")
     parser.add_argument("--model", help="model for each session (default: Claude Code's)")
     parser.add_argument("--effort", choices=("low", "medium", "high", "xhigh", "max"),
                         help="effort for each session (default: Claude Code's)")
