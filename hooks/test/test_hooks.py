@@ -140,8 +140,14 @@ class LargeReadGuardTest(ProjectTestCase):
         self.assertIn("1: # Feature design: Menu", decision["permissionDecisionReason"])
         self.assertIn("2: ## 1. Section", decision["permissionDecisionReason"])
 
-    def test_lets_a_ranged_read_through(self):
-        self.assertEqual(self.read(self.large_design(), offset=2, limit=40), "")
+    def test_lets_a_narrow_ranged_read_through(self):
+        self.assertEqual(self.read(self.large_design(), offset=2, limit=4), "")
+
+    def test_refuses_a_range_that_covers_most_of_a_large_document(self):
+        decision = json.loads(self.read(self.large_design(), offset=2, limit=40))["hookSpecificOutput"]
+        self.assertEqual(decision["permissionDecision"], "deny")
+        self.assertIn("That range", decision["permissionDecisionReason"])
+        self.assertIn("2: ## 1. Section", decision["permissionDecisionReason"])
 
     def test_lets_small_files_and_files_outside_the_workspace_through(self):
         self.write_status(STATUS)

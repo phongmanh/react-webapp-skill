@@ -168,8 +168,19 @@ def build_command(args, prompt, budget_left):
     return command
 
 
+def usage_summary(output):
+    """Token counts of one session from claude's JSON result, for the log (missing fields are left out)."""
+    usage = output.get("usage") or {}
+    summary = {key: usage[key] for key in (
+        "input_tokens", "cache_creation_input_tokens", "cache_read_input_tokens", "output_tokens",
+    ) if isinstance(usage.get(key), int)}
+    if isinstance(output.get("num_turns"), int):
+        summary["turns"] = output["num_turns"]
+    return summary
+
+
 def run_session(command, project, timeout_minutes):
-    """Runs one session; returns (result text, cost, session id). Raises Stop on failure."""
+    """Runs one session; returns (result text, cost, session id, token usage). Raises Stop on failure."""
     try:
         done = subprocess.run(
             command, cwd=project, capture_output=True, text=True, timeout=timeout_minutes * 60,
@@ -192,7 +203,7 @@ def run_session(command, project, timeout_minutes):
     if output.get("is_error"):
         raise Stop(f"The session ended with an error ({output.get('subtype', 'error')}): {result[-500:]}",
                    failed=True)
-    return result, cost, session_id
+    return result, cost, session_id, usage_summary(output)
 
 
 def result_marker(result):
@@ -239,7 +250,7 @@ def autopilot(args):
             sessions += 1
             print(paint(f"▶ Session {sessions}/{args.max_sessions} · {item}", "blue"), flush=True)
             try:
-                result, cost, session_id = run_session(command, project, args.session_timeout)
+                result, cost, session_id, usage = run_session(command, project, args.session_timeout)
             except Stop as stop:
                 log(log_file, session=sessions, item=item, outcome="failed", reason=stop.reason)
                 raise
@@ -247,7 +258,7 @@ def autopilot(args):
             marker, reason = result_marker(result)
             new_text = status_file.read_text(encoding="utf-8")
             log(log_file, session=sessions, session_id=session_id, item=item, cost_usd=round(cost, 4),
-                marker=marker, reason=reason, status_changed=new_text != text)
+                marker=marker, reason=reason, status_changed=new_text != text, usage=usage)
             print(paint(f"  ✔ done · ${cost:.2f} · session {session_id}{': ' + reason if reason else ''}", "green"),
                   flush=True)
             if args.dashboard:

@@ -1,4 +1,5 @@
 # Feature design: <Feature>
+<!-- About 24 KB at most, so a dependent feature can read it in one Read. Signatures and types, not implementations; cite architecture sections instead of restating them. Other features read only §2's public API. -->
 
 | FR IDs | Owner | Status | UI designs |
 |---|---|---|---|

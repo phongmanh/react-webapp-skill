@@ -23,7 +23,7 @@ The deliverables live in your project under `docs/sdlc/<initiative-slug>/`, with
 |---|---|---|
 | `session-context.py` | `SessionStart` | For each `docs/sdlc/*/STATUS.md`, shows the current phase, the next open row of the newest `## Phase N plan` and the `## Handoff` section. A session can start after `/clear` and pick up where the last one stopped. |
 | `guard-sdlc-baseline.py` | `PreToolUse` (`Edit`, `Write`, `MultiEdit`) | Asks you to confirm before Claude edits a deliverable that `STATUS.md` marks Approved. A baselined document changes only through an approved change request. |
-| `guard-large-read.py` | `PreToolUse` (`Read`) | Refuses a whole read of a file over 24 KB under `docs/sdlc/` and returns its outline with line numbers, so Claude reads only the sections it needs. Everything read stays in the context and is re-sent on every later call. |
+| `guard-large-read.py` | `PreToolUse` (`Read`) | Refuses a read of more than 24 KB under `docs/sdlc/` (a whole large file, or a range that covers most of one) and returns its outline with line numbers, so Claude reads only the sections it needs. Everything read stays in the context and is re-sent on every later call. |
 | `refresh-progress.py` | `PostToolUse` (`Edit`, `Write`, `MultiEdit`) | After Claude edits a `STATUS.md`, refreshes its progress dashboard, if you've created one. |
 
 Only you can switch the baseline gate off, in your git-ignored `.claude/settings.local.json`:

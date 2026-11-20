@@ -66,7 +66,7 @@ A TBD that blocks a Must requirement blocks the gate.
 |---|---|---|---|---|---|
 
 ## Phase 1 plan
-One row per unit of work, each sized for one session: in Phase 3, one small feature design, or a large one in two rows (§1–§5, then §6–§10 and the RTM). Start a new `## Phase <n> plan` table when a phase starts; the SessionStart hook reads the newest one and shows its first row that isn't Done. Status is one of: Not started / In progress / Done / Blocked: <reason>. Autopilot stops at a Blocked row.
+One row per unit of work, each sized for one session: in Phase 3, half a feature design per row (§1–§5, then §6–§10 and the RTM); one row only for a design that will stay under about 24 KB. Start a new `## Phase <n> plan` table when a phase starts; the SessionStart hook reads the newest one and shows its first row that isn't Done. Status is one of: Not started / In progress / Done / Blocked: <reason>. Autopilot stops at a Blocked row.
 
 | # | Work | Covers | Needs from the owner | Status |
 |---|---|---|---|---|
@@ -77,6 +77,6 @@ One row per unit of work, each sized for one session: in Phase 3, one small feat
 - **Last session:** YYYY-MM-DD — <what got done, one line>
 - **State:** <e.g. "G1 awaiting sign-off">
 - **Next action:** <the exact first step for the next session>
-- **Load:** <files with the sections or line ranges to read first, e.g. `design/menu.md` §2 (L232–417)>
+- **Load:** <the few sections the next action needs first, with line ranges, e.g. `design/menu.md` §2 public API (L232–300); not other features' internals>
 - **Inputs:** <where external sources are cached or pinned, with versions and commits, or "none">
 - **Waiting on user:** <decision, approval or review, or "nothing">
