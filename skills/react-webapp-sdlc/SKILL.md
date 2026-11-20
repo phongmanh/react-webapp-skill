@@ -69,7 +69,7 @@ A small feature may combine G2 and G3 into one review. **G5 is never skipped or 
 
    Record the answers and pick the tailoring column.
 4. **Load only what's needed:** the current phase file and the references its **Load** line lists. If STATUS.md doesn't show the previous gate as approved, stop and say so.
-   Read the workspace's documents and inputs the same way. For any file over about 24 KB (STATUS.md, designs, the architecture, contracts), read only the sections the Handoff's **Load** names, by line range; the plugin's Read hook refuses a whole read of such a file under `docs/sdlc/` and returns its outline with line numbers. Reading a whole architecture, design or contract file costs every later call in the session.
+   Read the workspace's documents and inputs the same way. For any file over about 24 KB (STATUS.md, designs, the architecture, contracts), read only the sections the Handoff's **Load** names, by line range; the plugin's Read hook refuses any Read of more than 24 KB under `docs/sdlc/`, whole file or range, and returns the file's outline with line numbers. Reading a whole architecture, design or contract file costs every later call in the session.
 5. **Write the deliverables** from `templates/` into the workspace.
    - Mark unknowns `TBD-<n>` and assumptions `ASSUMPTION:`, and list them in STATUS.md.
    - Ask the user for what only stakeholders can decide: targets, priorities, approvers.
@@ -115,7 +115,7 @@ Unattended mode: a driver script starts a fresh headless session (`claude -p`) f
 
 **Inside an autopilot session** (the prompt says AUTOPILOT):
 - Do exactly one plan row, then the End of session step (10). If the plan has no open row: when the gate log approves the current phase's gate, set the next phase in STATUS.md and write its `## Phase <n> plan`; otherwise run the gate review (step 7).
-- **Large rows:** if the context is getting large before the row is done, save the sections you finished, leave the row `In progress`, put what's left in the Handoff's **Next action**, and end the session with `AUTOPILOT-RESULT: continue`.
+- **Large rows:** split by content, not by how the session feels. A row that writes a whole feature design does §1–§5, saves them, leaves the row `In progress`, puts §6–§10 and the RTM in the Handoff's **Next action**, and ends with `AUTOPILOT-RESULT: continue`. Stop the same way in any phase once you have written about 24 KB of one deliverable.
 - **Cut-off sessions:** if `git status` shows work the Handoff doesn't mention (an earlier session may have been cut off), continue from it instead of starting the row over.
 - **Never ask.** Anything only the owner can decide (step 5) becomes an Open item; set the row to `Blocked: <reason>` and **Waiting on user** to the decision, then stop. **(proposed)** numbers stay proposed.
 - **Gate row:** run the exit checklist and write the gate review (checklist results, open TBDs, top risks, recommendation) as a `## G<n> review` section just above the Handoff. Set **Waiting on user** to `G<n> sign-off`. Never write the gate log or a tag.
